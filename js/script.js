@@ -1,1 +1,448 @@
-: "const moodActivities = {\n    tired: [\n        { activity: \"Take a 10-minute power nap to recharge.\", tool: \"Guided nap timer (coming soon)\", followUp: \"Did that nap boost your energy?\" },\n        { activity: \"Drink a glass of water to rehydrate.\", tool: \"Track hydration in Moodtask app\", followUp: \"Feeling more awake now?\" },\n        { activity: \"Listen to an upbeat playlist.\", tool: \"Curated playlists in app\", followUp: \"Did the music lift your mood?\" },\n        { activity: \"Do a quick stretch.\", tool: \"Open stretch tool\", action: () => openPopup('stretch') }\n    ],\n    stressed: [\n        { activity: \"Try a 1-minute breathing exercise.\", tool: \"Open breathing tool\", action: () => openPopup('breathing') },\n        { activity: \"Write down 3 things you’re grateful for.\", tool: \"Open gratitude tool\", action: () => openPopup('gratitude') },\n        { activity: \"Use a stress ball to release tension.\", tool: \"Shop stress ball\", affiliate: \"https://amzn.to/3example\" },\n        { activity: \"Listen to a calming soundscape.\", tool: \"Open soundscape tool\", action: () => openPopup('soundscape') }\n    ],\n    bored: [\n        { activity: \"Doodle for a minute to spark creativity.\", tool: \"Open doodle tool\", action: () => openPopup('doodle') },\n        { activity: \"Solve a quick sudoku puzzle.\", tool: \"Open sudoku tool\", action: () => openPopup('sudoku') },\n        { activity: \"Watch a funny video (in app).\", tool: \"Explore videos in Moodtask\", followUp: \"Did that make you smile?\" },\n        { activity: \"Try a brain teaser (coming soon).\", tool: \"Placeholder for future tool\" }\n    ],\n    excited: [\n        { activity: \"Share your excitement in a journal.\", tool: \"Open gratitude tool\", action: () => openPopup('gratitude') },\n        { activity: \"Set a small goal to channel energy.\", tool: \"Track goals in app\", followUp: \"Did that focus your excitement?\" },\n        { activity: \"Dance to a favorite song.\", tool: \"Curated playlists in app\", followUp: \"Did dancing amplify your vibe?\" }\n    ],\n    sad: [\n        { activity: \"Write a gratitude note to lift your spirits.\", tool: \"Open gratitude tool\", action: () => openPopup('gratitude') },\n        { activity: \"Listen to a comforting soundscape.\", tool: \"Open soundscape tool\", action: () => openPopup('soundscape') },\n        { activity: \"Practice self-compassion meditation.\", tool: \"Guided meditation in app\", followUp: \"Did that bring some comfort?\" }\n    ],\n    angry: [\n        { activity: \"Punch a virtual punching bag.\", tool: \"Open punching tool\", action: () => openPopup('punching') },\n        { activity: \"Shred your worries.\", tool: \"Open worry shredder\", action: () => openPopup('worry') },\n        { activity: \"Take 10 deep breaths.\", tool: \"Open breathing tool\", action: () => openPopup('breathing') }\n    ],\n    happy: [\n        { activity: \"Share your happiness with a kind note.\", tool: \"Open gratitude tool\", action: () => openPopup('gratitude') },\n        { activity: \"Capture this moment in a journal.\", tool: \"Open gratitude tool\", action: () => openPopup('gratitude') },\n        { activity: \"Celebrate with a quick dance.\", tool: \"Curated playlists in app\", followUp: \"Did that boost your joy?\" }\n    ],\n    confused: [\n        { activity: \"Write down what’s confusing you.\", tool: \"Open gratitude tool\", action: () => openPopup('gratitude') },\n        { activity: \"Focus on a calming color.\", tool: \"Open color focus tool\", action: () => openPopup('color') },\n        { activity: \"Break your problem into steps.\", tool: \"Track tasks in app\", followUp: \"Feeling more clear now?\" }\n    ],\n    default: [\n        { activity: \"Try a quick breathing exercise to center yourself.\", tool: \"Open breathing tool\", action: () => openPopup('breathing') },\n        { activity: \"Write down how you’re feeling.\", tool: \"Open gratitude tool\", action: () => openPopup('gratitude') },\n        { activity: \"Explore Moodtask’s habit tracker.\", tool: \"Download Moodtask\", followUp: \"Ready to start your journey?\" }\n    ]\n};\n\nfunction submitMood() {\n    const input = document.getElementById('mood-input').value.trim().toLowerCase();\n    const responseDiv = document.getElementById('mood-response');\n    let activities = moodActivities.default;\n\n    for (const mood in moodActivities) {\n        if (input.includes(mood)) {\n            activities = moodActivities[mood];\n            break;\n        }\n    }\n\n    let html = '<h3>Here are some ways to optimize your mood:</h3><ul>';\n    activities.forEach(activity => {\n        html += `<li>${activity.activity} <a href=\"#\" ${activity.action ? `onclick=\"${activity.action.toString().replace(/\\n/g, '')}\"` : activity.affiliate ? `href=\"${activity.affiliate}\" target=\"_blank\" rel=\"noopener noreferrer\"` : ''}>[${activity.tool}]</a>`;\n        if (activity.followUp) html += `<p class=\"follow-up\">${activity.followUp}</p>`;\n    });\n    html += '</ul>';\n    responseDiv.innerHTML = html;\n    document.getElementById('mood-input').value = '';\n}\n\n// Reused popup functions from original code\nlet currentSound = null;\nconst clickSound = document.getElementById('click-sound');\nconst successSound = document.getElementById('success-sound');\nconst punchSound = document.getElementById('punch-sound');\nconst shredSound = document.getElementById('shred-sound');\nconst natureSounds = {\n    nature: document.getElementById('nature-sound'),\n    rain: document.getElementById('rain-sound'),\n    waves: document.getElementById('waves-sound')\n};\n\nfunction playSound(sound, volume = 0.5) {\n    sound.volume = volume;\n    sound.currentTime = 0;\n    sound.play().catch(err => console.error('Sound playback failed:', err));\n}\n\nfunction openPopup(tool) {\n    playSound(clickSound, 0.3);\n    const popup = document.getElementById(`${tool}-popup`);\n    popup.style.display = 'flex';\n    if (tool === 'breathing') startBreathing();\n    if (tool === 'soundscape') startSoundscape();\n    if (tool === 'punching') startPunching();\n    if (tool === 'stretch') startStretch();\n    if (tool === 'doodle') startDoodle();\n    if (tool === 'worry') startWorry();\n    if (tool === 'color') startColorFocus();\n    if (tool === 'sudoku') startSudoku();\n    if (tool === 'gratitude') startGratitude();\n}\n\nfunction closePopup(tool) {\n    const popup = document.getElementById(`${tool}-popup`);\n    popup.style.display = 'none';\n    if (tool === 'breathing') clearInterval(window.breathingInterval);\n    if (tool === 'soundscape') {\n        clearInterval(window.soundscapeInterval);\n        if (currentSound) currentSound.pause();\n    }\n    if (tool === 'punching') clearInterval(window.punchingInterval);\n    if (tool === 'stretch') clearInterval(window.stretchInterval);\n    if (tool === 'doodle') clearInterval(window.doodleInterval);\n    if (tool === 'worry') {\n        document.getElementById('worry-text').value = '';\n        document.getElementById('paper-strips-container').innerHTML = '';\n    }\n    if (tool === 'color') clearInterval(window.colorInterval);\n    if (tool === 'sudoku') clearInterval(window.sudokuInterval);\n    if (tool === 'gratitude') document.getElementById('gratitude-text').value = '';\n}\n\nfunction updateProgress(elementId, total, current) {\n    const progressBar = document.getElementById(elementId);\n    const percentage = ((total - current) / total) * 100;\n    progressBar.style.width = percentage + '%';\n}\n\n// Popup-specific functions (reused from original code)\nfunction startBreathing() {\n    let time = 60;\n    let cycleTime = 0;\n    const cycleDuration = 13;\n    const steps = [\n        { text: \"Inhale\", instruction: \"Breathe in slowly through your nose...\", class: \"inhale\", duration: 4 },\n        { text: \"Hold\", instruction: \"Hold your breath...\", class: \"hold\", duration: 4 },\n        { text: \"Exhale\", instruction: \"Breathe out slowly through your mouth...\", class: \"exhale\", duration: 4 },\n        { text: \"Pause\", instruction: \"Relax for a moment...\", class: \"pause\", duration: 1 }\n    ];\n    const stepElement = document.getElementById('breathing-step');\n    const instructionElement = document.getElementById('breathing-instruction');\n    const timerElement = document.getElementById('breathing-timer');\n    const circle = document.getElementById('breathing-circle');\n    circle.className = '';\n    updateProgress('breathing-progress', 60, 0);\n\n    function updateBreathing() {\n        const currentStepIndex = Math.floor(cycleTime / 4) % 4;\n        const currentStep = steps[currentStepIndex];\n        stepElement.textContent = currentStep.text;\n        instructionElement.textContent = currentStep.instruction;\n        circle.className = currentStep.class;\n        cycleTime = (cycleTime + 1) % cycleDuration;\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('breathing-progress', 60, time);\n        if (time <= 0) {\n            clearInterval(window.breathingInterval);\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('breathing'), 1500);\n        }\n    }\n\n    updateBreathing();\n    window.breathingInterval = setInterval(updateBreathing, 1000);\n}\n\nfunction startSoundscape() {\n    let time = 90;\n    const timerElement = document.getElementById('soundscape-timer');\n    const selectElement = document.getElementById('soundscape-select');\n    const playButton = document.getElementById('play-btn');\n    const volumeSlider = document.getElementById('volume-slider');\n    updateProgress('soundscape-progress', 90, 0);\n    playButton.innerHTML = '<i class=\"fas fa-play\"></i>';\n    selectElement.onchange = function() {\n        if (currentSound) {\n            currentSound.pause();\n            currentSound.currentTime = 0;\n            playButton.innerHTML = '<i class=\"fas fa-play\"></i>';\n        }\n    };\n    playButton.onclick = function() {\n        const soundType = selectElement.value;\n        if (currentSound && currentSound !== natureSounds[soundType]) {\n            currentSound.pause();\n            currentSound.currentTime = 0;\n        }\n        currentSound = natureSounds[soundType];\n        if (currentSound.paused) {\n            currentSound.play().then(() => {\n                currentSound.volume = volumeSlider.value;\n                playButton.innerHTML = '<i class=\"fas fa-pause\"></i>';\n            }).catch(err => console.error('Sound playback failed:', err));\n        } else {\n            currentSound.pause();\n            currentSound.currentTime = 0;\n            playButton.innerHTML = '<i class=\"fas fa-play\"></i>';\n        }\n    };\n    volumeSlider.oninput = function() {\n        if (currentSound) currentSound.volume = this.value;\n    };\n    window.soundscapeInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('soundscape-progress', 90, time);\n        if (time <= 0) {\n            clearInterval(window.soundscapeInterval);\n            if (currentSound) currentSound.pause();\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('soundscape'), 1500);\n        }\n    }, 1000);\n}\n\nfunction startPunching() {\n    let time = 30;\n    let count = 0;\n    const bag = document.getElementById('punching-bag');\n    const timerElement = document.getElementById('punching-timer');\n    bag.textContent = '0';\n    bag.style.transform = 'scale(1)';\n    updateProgress('punching-progress', 30, 0);\n    bag.onclick = () => {\n        count++;\n        bag.textContent = count;\n        playSound(punchSound, 0.3);\n        bag.style.transform = 'scale(0.9)';\n        setTimeout(() => bag.style.transform = 'scale(1)', 100);\n    };\n    window.punchingInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('punching-progress', 30, time);\n        if (time <= 0) {\n            clearInterval(window.punchingInterval);\n            playSound(successSound, 0.4);\n            bag.innerHTML = `Great job! ${count} punches!`;\n            setTimeout(() => closePopup('punching'), 1500);\n        }\n    }, 1000);\n}\n\nfunction startStretch() {\n    let time = 60;\n    const stretches = [\n        \"Reach up high for 10 seconds.\",\n        \"Touch your toes for 10 seconds.\",\n        \"Stretch your arms behind your back.\",\n        \"Rotate your shoulders slowly.\"\n    ];\n    const stretchElement = document.getElementById('stretch-prompt');\n    const timerElement = document.getElementById('stretch-timer');\n    stretchElement.textContent = stretches[Math.floor(Math.random() * stretches.length)];\n    updateProgress('stretch-progress', 60, 0);\n    window.stretchInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('stretch-progress', 60, time);\n        if (time <= 0) {\n            clearInterval(window.stretchInterval);\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('stretch'), 1500);\n        }\n    }, 1000);\n}\n\nfunction startDoodle() {\n    let time = 90;\n    const canvas = document.getElementById('doodle-canvas');\n    const ctx = canvas.getContext('2d');\n    const timerElement = document.getElementById('doodle-timer');\n    let isDrawing = false;\n    ctx.lineWidth = 5;\n    ctx.lineCap = 'round';\n    canvas.onmousedown = () => isDrawing = true;\n    canvas.onmouseup = () => isDrawing = false;\n    canvas.onmousemove = (e) => {\n        if (!isDrawing) return;\n        const rect = canvas.getBoundingClientRect();\n        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);\n        ctx.stroke();\n    };\n    updateProgress('doodle-progress', 90, 0);\n    window.doodleInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('doodle-progress', 90, time);\n        if (time <= 0) {\n            clearInterval(window.doodleInterval);\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('doodle'), 1500);\n        }\n    }, 1000);\n}\n\nfunction startWorry() {\n    let time = 30;\n    const worryText = document.getElementById('worry-text');\n    const timerElement = document.getElementById('worry-timer');\n    worryText.value = '';\n    updateProgress('worry-progress', 30, 0);\n    window.worryInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('worry-progress', 30, time);\n        if (time <= 0) {\n            clearInterval(window.worryInterval);\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('worry'), 1500);\n        }\n    }, 1000);\n}\n\nfunction shredWorry() {\n    const worryText = document.getElementById('worry-text');\n    const container = document.getElementById('paper-strips-container');\n    if (!worryText.value.trim()) {\n        alert('Please enter a worry to shred.');\n        return;\n    }\n    container.innerHTML = '';\n    for (let i = 0; i < 5; i++) {\n        const strip = document.createElement('div');\n        strip.className = 'paper-strip';\n        strip.style.left = `${i * 20}px`;\n        container.appendChild(strip);\n    }\n    playSound(shredSound, 0.5);\n    setTimeout(() => {\n        worryText.value = '';\n        container.innerHTML = '';\n        playSound(successSound, 0.4);\n        alert('Worry shredded!');\n    }, 1000);\n}\n\nfunction startColorFocus() {\n    let time = 60;\n    const colors = ['#ff6347', '#4682b4', '#32cd32'];\n    const colorBox = document.getElementById('color-square');\n    const timerElement = document.getElementById('color-timer');\n    colorBox.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];\n    updateProgress('color-progress', 60, 0);\n    window.colorInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('color-progress', 60, time);\n        if (time <= 0) {\n            clearInterval(window.colorInterval);\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('color'), 1500);\n        }\n    }, 1000);\n}\n\nfunction startSudoku() {\n    let time = 90;\n    const gridElement = document.getElementById('sudoku-grid');\n    const timerElement = document.getElementById('sudoku-timer');\n    gridElement.innerHTML = '';\n    const puzzle = [\n        [5, 3, '', '', 7, '', '', '', ''],\n        [6, '', '', 1, 9, 5, '', '', ''],\n        ['', 9, 8, '', '', '', '', 6, ''],\n        [8, '', '', '', 6, '', '', '', 3],\n        [4, '', '', 8, '', 3, '', '', 1],\n        ['', '', '', '', 2, '', '', '', 6],\n        ['', 6, '', '', '', '', 2, 8, ''],\n        ['', '', '', 4, 1, 9, '', '', 5],\n        ['', '', '', '', 8, '', '', 7, 9]\n    ];\n    for (let i = 0; i < 9; i++) {\n        for (let j = 0; j < 9; j++) {\n            const input = document.createElement('input');\n            input.type = 'text';\n            input.maxLength = 1;\n            input.value = puzzle[i][j] || '';\n            input.disabled = !!puzzle[i][j];\n            input.oninput = () => {\n                if (!/^[1-9]?$/.test(input.value)) input.value = '';\n            };\n            gridElement.appendChild(input);\n        }\n    }\n    updateProgress('sudoku-progress', 90, 0);\n    window.sudokuInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('sudoku-progress', 90, time);\n        if (time <= 0) {\n            clearInterval(window.sudokuInterval);\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('sudoku'), 1500);\n        }\n    }, 1000);\n}\n\nfunction startGratitude() {\n    let time = 30;\n    const gratitudeText = document.getElementById('gratitude-text');\n    const timerElement = document.getElementById('gratitude-timer');\n    gratitudeText.value = '';\n    updateProgress('gratitude-progress', 30, 0);\n    window.gratitudeInterval = setInterval(() => {\n        time--;\n        timerElement.textContent = `Time remaining: ${time}s`;\n        updateProgress('gratitude-progress', 30, time);\n        if (time <= 0) {\n            clearInterval(window.gratitudeInterval);\n            playSound(successSound, 0.4);\n            setTimeout(() => closePopup('gratitude'), 1500);\n        }\n    }, 1000);\n}\n\nfunction saveGratitude() {\n    const gratitudeText = document.getElementById('gratitude-text');\n    if (!gratitudeText.value.trim()) {\n        alert('Please enter something you are grateful for.');\n        return;\n    }\n    let gratitudes = JSON.parse(localStorage.getItem('gratitudes') || '[]');\n    gratitudes.push({ text: gratitudeText.value, date: new Date().toLocaleString() });\n    localStorage.setItem('gratitudes', JSON.stringify(gratitudes));\n    playSound(successSound, 0.4);\n    alert('Gratitude saved!');\n    gratitudeText.value = '';\n}\n\nfunction clearCanvas() {\n    const canvas = document.getElementById('doodle-canvas');\n    const ctx = canvas.getContext('2d');\n    ctx.clearRect(0, 0, canvas.width, canvas.height);\n}\n\nfunction saveDoodle() {\n    const canvas = document.getElementById('doodle-canvas');\n    const link = document.createElement('a');\n    link.download = 'doodle.png';\n    link.href = canvas.toDataURL();\n    link.click();\n}
+const moodActivities = {
+    tired: [
+        { activity: "Take a 10-minute power nap to recharge.", tool: "Guided nap timer (coming soon)", followUp: "Did that nap boost your energy?" },
+        { activity: "Drink a glass of water to rehydrate.", tool: "Track hydration in Moodtask app", followUp: "Feeling more awake now?" },
+        { activity: "Listen to an upbeat playlist.", tool: "Curated playlists in app", followUp: "Did the music lift your mood?" },
+        { activity: "Do a quick stretch.", tool: "Open stretch tool", action: () => openPopup('stretch') }
+    ],
+    stressed: [
+        { activity: "Try a 1-minute breathing exercise.", tool: "Open breathing tool", action: () => openPopup('breathing') },
+        { activity: "Write down 3 things you’re grateful for.", tool: "Open gratitude tool", action: () => openPopup('gratitude') },
+        { activity: "Use a stress ball to release tension.", tool: "Shop stress ball", affiliate: "https://amzn.to/3example" },
+        { activity: "Listen to a calming soundscape.", tool: "Open soundscape tool", action: () => openPopup('soundscape') }
+    ],
+    bored: [
+        { activity: "Doodle for a minute to spark creativity.", tool: "Open doodle tool", action: () => openPopup('doodle') },
+        { activity: "Solve a quick sudoku puzzle.", tool: "Open sudoku tool", action: () => openPopup('sudoku') },
+        { activity: "Watch a funny video (in app).", tool: "Explore videos in Moodtask", followUp: "Did that make you smile?" },
+        { activity: "Try a brain teaser (coming soon).", tool: "Placeholder for future tool" }
+    ],
+    excited: [
+        { activity: "Share your excitement in a journal.", tool: "Open gratitude tool", action: () => openPopup('gratitude') },
+        { activity: "Set a small goal to channel energy.", tool: "Track goals in app", followUp: "Did that focus your excitement?" },
+        { activity: "Dance to a favorite song.", tool: "Curated playlists in app", followUp: "Did dancing amplify your vibe?" }
+    ],
+    sad: [
+        { activity: "Write a gratitude note to lift your spirits.", tool: "Open gratitude tool", action: () => openPopup('gratitude') },
+        { activity: "Listen to a comforting soundscape.", tool: "Open soundscape tool", action: () => openPopup('soundscape') },
+        { activity: "Practice self-compassion meditation.", tool: "Guided meditation in app", followUp: "Did that bring some comfort?" }
+    ],
+    angry: [
+        { activity: "Punch a virtual punching bag.", tool: "Open punching tool", action: () => openPopup('punching') },
+        { activity: "Shred your worries.", tool: "Open worry shredder", action: () => openPopup('worry') },
+        { activity: "Take 10 deep breaths.", tool: "Open breathing tool", action: () => openPopup('breathing') }
+    ],
+    happy: [
+        { activity: "Share your happiness with a kind note.", tool: "Open gratitude tool", action: () => openPopup('gratitude') },
+        { activity: "Capture this moment in a journal.", tool: "Open gratitude tool", action: () => openPopup('gratitude') },
+        { activity: "Celebrate with a quick dance.", tool: "Curated playlists in app", followUp: "Did that boost your joy?" }
+    ],
+    confused: [
+        { activity: "Write down what’s confusing you.", tool: "Open gratitude tool", action: () => openPopup('gratitude') },
+        { activity: "Focus on a calming color.", tool: "Open color focus tool", action: () => openPopup('color') },
+        { activity: "Break your problem into steps.", tool: "Track tasks in app", followUp: "Feeling more clear now?" }
+    ],
+    default: [
+        { activity: "Try a quick breathing exercise to center yourself.", tool: "Open breathing tool", action: () => openPopup('breathing') },
+        { activity: "Write down how you’re feeling.", tool: "Open gratitude tool", action: () => openPopup('gratitude') },
+        { activity: "Explore Moodtask’s habit tracker.", tool: "Download Moodtask", followUp: "Ready to start your journey?" }
+    ]
+};
+
+function submitMood() {
+    const input = document.getElementById('mood-input').value.trim().toLowerCase();
+    const responseDiv = document.getElementById('mood-response');
+    let activities = moodActivities.default;
+
+    for (const mood in moodActivities) {
+        if (input.includes(mood)) {
+            activities = moodActivities[mood];
+            break;
+        }
+    }
+
+    let html = '<h3>Here are some ways to optimize your mood:</h3><ul>';
+    activities.forEach(activity => {
+        html += `<li>${activity.activity} <a href="#" ${activity.action ? `onclick="${activity.action.toString().replace(/\n/g, '')}"` : activity.affiliate ? `href="${activity.affiliate}" target="_blank" rel="noopener noreferrer"` : ''}>[${activity.tool}]</a>`;
+        if (activity.followUp) html += `<p class="follow-up">${activity.followUp}</p>`;
+    });
+    html += '</ul>';
+    responseDiv.innerHTML = html;
+    document.getElementById('mood-input').value = '';
+}
+
+// Reused popup functions from original code
+let currentSound = null;
+const clickSound = document.getElementById('click-sound');
+const successSound = document.getElementById('success-sound');
+const punchSound = document.getElementById('punch-sound');
+const shredSound = document.getElementById('shred-sound');
+const natureSounds = {
+    nature: document.getElementById('nature-sound'),
+    rain: document.getElementById('rain-sound'),
+    waves: document.getElementById('waves-sound')
+};
+
+function playSound(sound, volume = 0.5) {
+    sound.volume = volume;
+    sound.currentTime = 0;
+    sound.play().catch(err => console.error('Sound playback failed:', err));
+}
+
+function openPopup(tool) {
+    playSound(clickSound, 0.3);
+    const popup = document.getElementById(`${tool}-popup`);
+    popup.style.display = 'flex';
+    if (tool === 'breathing') startBreathing();
+    if (tool === 'soundscape') startSoundscape();
+    if (tool === 'punching') startPunching();
+    if (tool === 'stretch') startStretch();
+    if (tool === 'doodle') startDoodle();
+    if (tool === 'worry') startWorry();
+    if (tool === 'color') startColorFocus();
+    if (tool === 'sudoku') startSudoku();
+    if (tool === 'gratitude') startGratitude();
+}
+
+function closePopup(tool) {
+    const popup = document.getElementById(`${tool}-popup`);
+    popup.style.display = 'none';
+    if (tool === 'breathing') clearInterval(window.breathingInterval);
+    if (tool === 'soundscape') {
+        clearInterval(window.soundscapeInterval);
+        if (currentSound) currentSound.pause();
+    }
+    if (tool === 'punching') clearInterval(window.punchingInterval);
+    if (tool === 'stretch') clearInterval(window.stretchInterval);
+    if (tool === 'doodle') clearInterval(window.doodleInterval);
+    if (tool === 'worry') {
+        document.getElementById('worry-text').value = '';
+        document.getElementById('paper-strips-container').innerHTML = '';
+    }
+    if (tool === 'color') clearInterval(window.colorInterval);
+    if (tool === 'sudoku') clearInterval(window.sudokuInterval);
+    if (tool === 'gratitude') document.getElementById('gratitude-text').value = '';
+}
+
+function updateProgress(elementId, total, current) {
+    const progressBar = document.getElementById(elementId);
+    const percentage = ((total - current) / total) * 100;
+    progressBar.style.width = percentage + '%';
+}
+
+// Popup-specific functions (reused from original code)
+function startBreathing() {
+    let time = 60;
+    let cycleTime = 0;
+    const cycleDuration = 13;
+    const steps = [
+        { text: "Inhale", instruction: "Breathe in slowly through your nose...", class: "inhale", duration: 4 },
+        { text: "Hold", instruction: "Hold your breath...", class: "hold", duration: 4 },
+        { text: "Exhale", instruction: "Breathe out slowly through your mouth...", class: "exhale", duration: 4 },
+        { text: "Pause", instruction: "Relax for a moment...", class: "pause", duration: 1 }
+    ];
+    const stepElement = document.getElementById('breathing-step');
+    const instructionElement = document.getElementById('breathing-instruction');
+    const timerElement = document.getElementById('breathing-timer');
+    const circle = document.getElementById('breathing-circle');
+    circle.className = '';
+    updateProgress('breathing-progress', 60, 0);
+
+    function updateBreathing() {
+        const currentStepIndex = Math.floor(cycleTime / 4) % 4;
+        const currentStep = steps[currentStepIndex];
+        stepElement.textContent = currentStep.text;
+        instructionElement.textContent = currentStep.instruction;
+        circle.className = currentStep.class;
+        cycleTime = (cycleTime + 1) % cycleDuration;
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('breathing-progress', 60, time);
+        if (time <= 0) {
+            clearInterval(window.breathingInterval);
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('breathing'), 1500);
+        }
+    }
+
+    updateBreathing();
+    window.breathingInterval = setInterval(updateBreathing, 1000);
+}
+
+function startSoundscape() {
+    let time = 90;
+    const timerElement = document.getElementById('soundscape-timer');
+    const selectElement = document.getElementById('soundscape-select');
+    const playButton = document.getElementById('play-btn');
+    const volumeSlider = document.getElementById('volume-slider');
+    updateProgress('soundscape-progress', 90, 0);
+    playButton.innerHTML = '<i class="fas fa-play"></i>';
+    selectElement.onchange = function() {
+        if (currentSound) {
+            currentSound.pause();
+            currentSound.currentTime = 0;
+            playButton.innerHTML = '<i class="fas fa-play"></i>';
+        }
+    };
+    playButton.onclick = function() {
+        const soundType = selectElement.value;
+        if (currentSound && currentSound !== natureSounds[soundType]) {
+            currentSound.pause();
+            currentSound.currentTime = 0;
+        }
+        currentSound = natureSounds[soundType];
+        if (currentSound.paused) {
+            currentSound.play().then(() => {
+                currentSound.volume = volumeSlider.value;
+                playButton.innerHTML = '<i class="fas fa-pause"></i>';
+            }).catch(err => console.error('Sound playback failed:', err));
+        } else {
+            currentSound.pause();
+            currentSound.currentTime = 0;
+            playButton.innerHTML = '<i class="fas fa-play"></i>';
+        }
+    };
+    volumeSlider.oninput = function() {
+        if (currentSound) currentSound.volume = this.value;
+    };
+    window.soundscapeInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('soundscape-progress', 90, time);
+        if (time <= 0) {
+            clearInterval(window.soundscapeInterval);
+            if (currentSound) currentSound.pause();
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('soundscape'), 1500);
+        }
+    }, 1000);
+}
+
+function startPunching() {
+    let time = 30;
+    let count = 0;
+    const bag = document.getElementById('punching-bag');
+    const timerElement = document.getElementById('punching-timer');
+    bag.textContent = '0';
+    bag.style.transform = 'scale(1)';
+    updateProgress('punching-progress', 30, 0);
+    bag.onclick = () => {
+        count++;
+        bag.textContent = count;
+        playSound(punchSound, 0.3);
+        bag.style.transform = 'scale(0.9)';
+        setTimeout(() => bag.style.transform = 'scale(1)', 100);
+    };
+    window.punchingInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('punching-progress', 30, time);
+        if (time <= 0) {
+            clearInterval(window.punchingInterval);
+            playSound(successSound, 0.4);
+            bag.innerHTML = `Great job! ${count} punches!`;
+            setTimeout(() => closePopup('punching'), 1500);
+        }
+    }, 1000);
+}
+
+function startStretch() {
+    let time = 60;
+    const stretches = [
+        "Reach up high for 10 seconds.",
+        "Touch your toes for 10 seconds.",
+        "Stretch your arms behind your back.",
+        "Rotate your shoulders slowly."
+    ];
+    const stretchElement = document.getElementById('stretch-prompt');
+    const timerElement = document.getElementById('stretch-timer');
+    stretchElement.textContent = stretches[Math.floor(Math.random() * stretches.length)];
+    updateProgress('stretch-progress', 60, 0);
+    window.stretchInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('stretch-progress', 60, time);
+        if (time <= 0) {
+            clearInterval(window.stretchInterval);
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('stretch'), 1500);
+        }
+    }, 1000);
+}
+
+function startDoodle() {
+    let time = 90;
+    const canvas = document.getElementById('doodle-canvas');
+    const ctx = canvas.getContext('2d');
+    const timerElement = document.getElementById('doodle-timer');
+    let isDrawing = false;
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    canvas.onmousedown = () => isDrawing = true;
+    canvas.onmouseup = () => isDrawing = false;
+    canvas.onmousemove = (e) => {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+    };
+    updateProgress('doodle-progress', 90, 0);
+    window.doodleInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('doodle-progress', 90, time);
+        if (time <= 0) {
+            clearInterval(window.doodleInterval);
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('doodle'), 1500);
+        }
+    }, 1000);
+}
+
+function startWorry() {
+    let time = 30;
+    const worryText = document.getElementById('worry-text');
+    const timerElement = document.getElementById('worry-timer');
+    worryText.value = '';
+    updateProgress('worry-progress', 30, 0);
+    window.worryInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('worry-progress', 30, time);
+        if (time <= 0) {
+            clearInterval(window.worryInterval);
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('worry'), 1500);
+        }
+    }, 1000);
+}
+
+function shredWorry() {
+    const worryText = document.getElementById('worry-text');
+    const container = document.getElementById('paper-strips-container');
+    if (!worryText.value.trim()) {
+        alert('Please enter a worry to shred.');
+        return;
+    }
+    container.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const strip = document.createElement('div');
+        strip.className = 'paper-strip';
+        strip.style.left = `${i * 20}px`;
+        container.appendChild(strip);
+    }
+    playSound(shredSound, 0.5);
+    setTimeout(() => {
+        worryText.value = '';
+        container.innerHTML = '';
+        playSound(successSound, 0.4);
+        alert('Worry shredded!');
+    }, 1000);
+}
+
+function startColorFocus() {
+    let time = 60;
+    const colors = ['#ff6347', '#4682b4', '#32cd32'];
+    const colorBox = document.getElementById('color-square');
+    const timerElement = document.getElementById('color-timer');
+    colorBox.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    updateProgress('color-progress', 60, 0);
+    window.colorInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('color-progress', 60, time);
+        if (time <= 0) {
+            clearInterval(window.colorInterval);
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('color'), 1500);
+        }
+    }, 1000);
+}
+
+function startSudoku() {
+    let time = 90;
+    const gridElement = document.getElementById('sudoku-grid');
+    const timerElement = document.getElementById('sudoku-timer');
+    gridElement.innerHTML = '';
+    const puzzle = [
+        [5, 3, '', '', 7, '', '', '', ''],
+        [6, '', '', 1, 9, 5, '', '', ''],
+        ['', 9, 8, '', '', '', '', 6, ''],
+        [8, '', '', '', 6, '', '', '', 3],
+        [4, '', '', 8, '', 3, '', '', 1],
+        ['', '', '', '', 2, '', '', '', 6],
+        ['', 6, '', '', '', '', 2, 8, ''],
+        ['', '', '', 4, 1, 9, '', '', 5],
+        ['', '', '', '', 8, '', '', 7, 9]
+    ];
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.maxLength = 1;
+            input.value = puzzle[i][j] || '';
+            input.disabled = !!puzzle[i][j];
+            input.oninput = () => {
+                if (!/^[1-9]?$/.test(input.value)) input.value = '';
+            };
+            gridElement.appendChild(input);
+        }
+    }
+    updateProgress('sudoku-progress', 90, 0);
+    window.sudokuInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('sudoku-progress', 90, time);
+        if (time <= 0) {
+            clearInterval(window.sudokuInterval);
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('sudoku'), 1500);
+        }
+    }, 1000);
+}
+
+function startGratitude() {
+    let time = 30;
+    const gratitudeText = document.getElementById('gratitude-text');
+    const timerElement = document.getElementById('gratitude-timer');
+    gratitudeText.value = '';
+    updateProgress('gratitude-progress', 30, 0);
+    window.gratitudeInterval = setInterval(() => {
+        time--;
+        timerElement.textContent = `Time remaining: ${time}s`;
+        updateProgress('gratitude-progress', 30, time);
+        if (time <= 0) {
+            clearInterval(window.gratitudeInterval);
+            playSound(successSound, 0.4);
+            setTimeout(() => closePopup('gratitude'), 1500);
+        }
+    }, 1000);
+}
+
+function saveGratitude() {
+    const gratitudeText = document.getElementById('gratitude-text');
+    if (!gratitudeText.value.trim()) {
+        alert('Please enter something you are grateful for.');
+        return;
+    }
+    let gratitudes = JSON.parse(localStorage.getItem('gratitudes') || '[]');
+    gratitudes.push({ text: gratitudeText.value, date: new Date().toLocaleString() });
+    localStorage.setItem('gratitudes', JSON.stringify(gratitudes));
+    playSound(successSound, 0.4);
+    alert('Gratitude saved!');
+    gratitudeText.value = '';
+}
+
+function clearCanvas() {
+    const canvas = document.getElementById('doodle-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function saveDoodle() {
+    const canvas = document.getElementById('doodle-canvas');
+    const link = document.createElement('a');
+    link.download = 'doodle.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
